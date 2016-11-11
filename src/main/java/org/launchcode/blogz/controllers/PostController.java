@@ -23,23 +23,47 @@ public class PostController extends AbstractController {
 	@RequestMapping(value = "/blog/newpost", method = RequestMethod.POST)
 	public String newPost(HttpServletRequest request, Model model) {
 		
-		// TODO - implement newPost
+		String title = request.getParameter("title");
+		String body  = request.getParameter("body");
 		
-		return "redirect:index"; // TODO - this redirect should go to the new post's page  		
+		if (title == null || title == "" || body == null || body == "") {
+			model.addAttribute("error", "Fields may not be empty.");
+			return "newpost";
+		}
+		
+		User user = getUserFromSession(request.getSession());
+		Post post = new Post(title, body, user);
+		postDao.save(post);
+		
+		return String.format("redirect:/blog/%s/%s", user.getUsername(), post.getUid());
 	}
 	
 	@RequestMapping(value = "/blog/{username}/{uid}", method = RequestMethod.GET)
 	public String singlePost(@PathVariable String username, @PathVariable int uid, Model model) {
 		
-		// TODO - implement singlePost
+		User user = userDao.findByUsername(username);
+		Post post = postDao.findByUid(uid);
 		
+		if (user == null || post == null || !(post.getAuthor().equals(user))) {
+			return "notfound";
+		}
+		
+		model.addAttribute("post", post);
 		return "post";
 	}
 	
 	@RequestMapping(value = "/blog/{username}", method = RequestMethod.GET)
 	public String userPosts(@PathVariable String username, Model model) {
 		
-		// TODO - implement userPosts
+		User author = userDao.findByUsername(username);
+		
+		if (author == null) {
+			return "notfound";
+		}
+		
+		List<Post> posts = postDao.findByAuthor(author);
+		
+		model.addAttribute("posts", posts);
 		
 		return "blog";
 	}
